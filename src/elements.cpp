@@ -139,7 +139,7 @@ uint32_t G1Element::GetFingerprint() const
 {
     uint8_t buffer[G1Element::SIZE];
     uint8_t hash[32];
-    memcpy(buffer, Serialize().begin(), G1Element::SIZE);
+    memcpy(buffer, Serialize().data, G1Element::SIZE);
     Util::Hash256(hash, buffer, G1Element::SIZE);
     return Util::FourBytesToInt(hash);
 }

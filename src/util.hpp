@@ -47,7 +47,7 @@ public:
     }
     template <size_t N>
     Bytes(const fc::array<char, N>& a)
-        : pData(reinterpret_cast<const uint8_t*>(a.begin())), nSize(N)
+        : pData(reinterpret_cast<const uint8_t*>(a.data)), nSize(N)
     {
     }
 

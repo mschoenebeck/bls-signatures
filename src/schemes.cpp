@@ -448,9 +448,7 @@ bool AugSchemeMPL::AggregateVerify(const vector<G1Element>& pubkeys,
     for (int i = 0; i < nPubKeys; ++i) {
         vector<uint8_t>& aug = augMessages[i];
         fc::ecc::bls_g1 pk = pubkeys[i].Serialize();
-        //vector<uint8_t>&& pubkey = pubkeys[i].Serialize();
         aug.reserve(pk.size() + messages[i].size());
-        //aug.insert(aug.end(), pubkey.begin(), pubkey.end());
         aug.insert(aug.end(), pk.data, pk.data + pk.size());
         aug.insert(aug.end(), messages[i].begin(), messages[i].end());
     }

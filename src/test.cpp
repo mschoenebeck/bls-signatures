@@ -1020,10 +1020,10 @@ TEST_CASE("Advanced") {
         REQUIRE(AugSchemeMPL().Verify(g1_1, Bytes(vecHash), g2AugSignVector1));
 
         vector<fc::ecc::bls_g1> vecG1AugVector = {g1_1.Serialize(), g1_2.Serialize()};
-        vector<fc::ecc::bls_g2 > vecG2AugVector = {g2AugSignVector1.Serialize(), g2AugSign2.Serialize()};
+        vector<fc::ecc::bls_g2> vecG2AugVector = {g2AugSignVector1.Serialize(), g2AugSign2.Serialize()};
 
-        fc::ecc::bls_g2  aggAugVector = AugSchemeMPL().Aggregate(vecG2AugVector);
-        fc::ecc::bls_g2  aggAugBytes = AugSchemeMPL().Aggregate(vector<Bytes>{vecG2AugVector.begin(), vecG2AugVector.end()});
+        fc::ecc::bls_g2 aggAugVector = AugSchemeMPL().Aggregate(vecG2AugVector);
+        fc::ecc::bls_g2 aggAugBytes = AugSchemeMPL().Aggregate(vector<Bytes>{vecG2AugVector.begin(), vecG2AugVector.end()});
         REQUIRE(aggAugVector == aggAugBytes);
 
         REQUIRE(AugSchemeMPL().AggregateVerify(vector<Bytes>{vecG1AugVector.begin(), vecG1AugVector.end()},
