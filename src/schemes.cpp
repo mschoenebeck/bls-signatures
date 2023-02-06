@@ -58,7 +58,7 @@ PrivateKey CoreMPL::KeyGen(const Bytes& seed) {
     return HDKeys::KeyGen(seed);
 }
 
-vector<uint8_t> CoreMPL::SkToPk(const PrivateKey &seckey)
+fc::ecc::bls_g1 CoreMPL::SkToPk(const PrivateKey &seckey)
 {
     return seckey.GetG1Element().Serialize();
 }
@@ -120,16 +120,16 @@ bool CoreMPL::Verify(const G1Element& pubkey, const Bytes& message, const G2Elem
     return CoreMPL::NativeVerify((g1_t*)vecG1.data(), (g2_t*)vecG2.data(), 2);
 }
 
-vector<uint8_t> CoreMPL::Aggregate(const vector<vector<uint8_t>> &signatures)
+fc::ecc::bls_g2 CoreMPL::Aggregate(const vector<fc::ecc::bls_g2> &signatures)
 {
     vector<G2Element> elements;
-    for (const vector<uint8_t>& signature : signatures) {
+    for (const fc::ecc::bls_g2& signature : signatures) {
         elements.push_back(G2Element::FromByteVector(signature));
     }
     return CoreMPL::Aggregate(elements).Serialize();
 }
 
-vector<uint8_t> CoreMPL::Aggregate(const vector<Bytes>& signatures)
+fc::ecc::bls_g2 CoreMPL::Aggregate(const vector<Bytes>& signatures)
 {
     vector<G2Element> elements;
     for (const Bytes& signature : signatures) {
@@ -156,9 +156,9 @@ G1Element CoreMPL::Aggregate(const vector<G1Element> &publicKeys)
     return aggregated;
 }
 
-bool CoreMPL::AggregateVerify(const vector<vector<uint8_t>> &pubkeys,
+bool CoreMPL::AggregateVerify(const vector<fc::ecc::bls_g1> &pubkeys,
                               const vector<vector<uint8_t>> &messages,  // unhashed
-                              const vector<uint8_t> &signature)
+                              const fc::ecc::bls_g2 &signature)
 {
     const std::vector<Bytes> vecPubKeyBytes(pubkeys.begin(), pubkeys.end());
     const std::vector<Bytes> vecMessagesBytes(messages.begin(), messages.end());
@@ -257,9 +257,9 @@ G1Element CoreMPL::DeriveChildPkUnhardened(const G1Element& pk, uint32_t index) 
     return HDKeys::DeriveChildG1Unhardened(pk, index);
 }
 
-bool BasicSchemeMPL::AggregateVerify(const vector<vector<uint8_t>> &pubkeys,
+bool BasicSchemeMPL::AggregateVerify(const vector<fc::ecc::bls_g1> &pubkeys,
                                      const vector<vector<uint8_t>> &messages,
-                                     const vector<uint8_t> &signature)
+                                     const fc::ecc::bls_g2 &signature)
 {
     const size_t nPubKeys = pubkeys.size();
     auto arg_check = VerifyAggregateSignatureArguments(nPubKeys, messages.size(), G2Element::FromByteVector(signature));
@@ -350,7 +350,8 @@ G2Element AugSchemeMPL::Sign(const PrivateKey& seckey,
                              const Bytes& message,
                              const G1Element& prepend_pk)
 {
-    vector<uint8_t> augMessage = prepend_pk.Serialize();
+    fc::ecc::bls_g1 pk = prepend_pk.Serialize();
+    vector<uint8_t> augMessage(pk.data, pk.data + pk.size());
     augMessage.reserve(augMessage.size() + message.size());
     augMessage.insert(augMessage.end(), message.begin(), message.end());
     return CoreMPL::Sign(seckey, augMessage);
@@ -387,15 +388,16 @@ bool AugSchemeMPL::Verify(const G1Element& pubkey,
                           const Bytes& message,
                           const G2Element& signature)
 {
-    vector<uint8_t> augMessage = pubkey.Serialize();
+    fc::ecc::bls_g1 pk = pubkey.Serialize();
+    vector<uint8_t> augMessage(pk.data, pk.data + pk.size());
     augMessage.reserve(augMessage.size() + message.size());
     augMessage.insert(augMessage.end(), message.begin(), message.end());
     return CoreMPL::Verify(pubkey, augMessage, signature);
 }
 
-bool AugSchemeMPL::AggregateVerify(const vector<vector<uint8_t>> &pubkeys,
+bool AugSchemeMPL::AggregateVerify(const vector<fc::ecc::bls_g1> &pubkeys,
                                    const vector<vector<uint8_t>> &messages,
-                                   const vector<uint8_t> &signature)
+                                   const fc::ecc::bls_g2 &signature)
 {
     std::vector<Bytes> vecPubKeyBytes(pubkeys.begin(), pubkeys.end());
     std::vector<Bytes> vecMessagesBytes(messages.begin(), messages.end());
@@ -445,9 +447,11 @@ bool AugSchemeMPL::AggregateVerify(const vector<G1Element>& pubkeys,
     vector<vector<uint8_t>> augMessages(nPubKeys);
     for (int i = 0; i < nPubKeys; ++i) {
         vector<uint8_t>& aug = augMessages[i];
-        vector<uint8_t>&& pubkey = pubkeys[i].Serialize();
-        aug.reserve(pubkey.size() + messages[i].size());
-        aug.insert(aug.end(), pubkey.begin(), pubkey.end());
+        fc::ecc::bls_g1 pk = pubkeys[i].Serialize();
+        //vector<uint8_t>&& pubkey = pubkeys[i].Serialize();
+        aug.reserve(pk.size() + messages[i].size());
+        //aug.insert(aug.end(), pubkey.begin(), pubkey.end());
+        aug.insert(aug.end(), pk.data, pk.data + pk.size());
         aug.insert(aug.end(), messages[i].begin(), messages[i].end());
     }
 
@@ -521,9 +525,9 @@ bool PopSchemeMPL::FastAggregateVerify(const vector<G1Element>& pubkeys,
     return CoreMPL::Verify(CoreMPL::Aggregate(pubkeys), message, signature);
 }
 
-bool PopSchemeMPL::FastAggregateVerify(const vector<vector<uint8_t>> &pubkeys,
+bool PopSchemeMPL::FastAggregateVerify(const vector<fc::ecc::bls_g1> &pubkeys,
                                        const vector<uint8_t> &message,
-                                       const vector<uint8_t> &signature)
+                                       const fc::ecc::bls_g2 &signature)
 {
     const std::vector<Bytes> vecPubKeyBytes(pubkeys.begin(), pubkeys.end());
     return PopSchemeMPL::FastAggregateVerify(vecPubKeyBytes, Bytes(message), Bytes(signature));

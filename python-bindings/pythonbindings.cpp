@@ -15,6 +15,7 @@
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <fc/crypto/elliptic.hpp>
 
 #include "../src/bls.hpp"
 #include "../src/elements.hpp"
@@ -477,13 +478,13 @@ PYBIND11_MODULE(blspy, m)
         .def(
             "__bytes__",
             [](const G1Element &ele) {
-                vector<uint8_t> out;
+                fc::ecc::bls_g1 out;
                 {
                     py::gil_scoped_release release;
                     out = ele.Serialize();
                 }
                 py::bytes ans = py::bytes(
-                    reinterpret_cast<const char *>(out.data()), G1Element::SIZE);
+                    reinterpret_cast<const char *>(out.data), G1Element::SIZE);
                 return ans;
             })
         .def("__deepcopy__", [](const G1Element &ele, const py::object &memo) {
@@ -612,13 +613,13 @@ PYBIND11_MODULE(blspy, m)
         .def(
             "__bytes__",
             [](const G2Element &ele) {
-                vector<uint8_t> out;
+                fc::ecc::bls_g2 out;
                 {
                     py::gil_scoped_release release;
                     out = ele.Serialize();
                 }
                 py::bytes ans = py::bytes(
-                    reinterpret_cast<const char *>(out.data()), G2Element::SIZE);
+                    reinterpret_cast<const char *>(out.data), G2Element::SIZE);
                 return ans;
             })
         .def("__deepcopy__", [](const G2Element &ele, const py::object &memo) {

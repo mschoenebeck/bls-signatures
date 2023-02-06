@@ -311,9 +311,10 @@ TEST_CASE("IETF test vectors") {
         vector<uint8_t> msg = {3, 1, 4, 1, 5, 9};
         auto skobj = PrivateKey::FromBytes(Bytes(Util::HexToBytes(sk)));
         G2Element sig = BasicSchemeMPL().Sign(skobj, msg);
-        vector<uint8_t> sig1;
+        fc::ecc::bls_g2 sig1;
+        uint8_t i = 0;
         for (const uint8_t byte : Util::HexToBytes(sig1BasicHex)) {
-            sig1.push_back(byte);
+            sig1.data[i++] = *reinterpret_cast<const char*>(&byte);
         }
         REQUIRE(sig == G2Element::FromByteVector(sig1));
     }
@@ -472,9 +473,9 @@ TEST_CASE("Error handling")
 
     SECTION("Should throw on a bad public key")
     {
-        vector<uint8_t> buf(G1Element::SIZE, 0);
+        fc::ecc::bls_g1 buf;
         for (int i = 0; i < 0xFF; i++) {
-            buf[0] = (uint8_t)i;
+            buf.data[0] = (uint8_t)i;
             if (i == 0xc0) { // Infinity prefix shouldn't throw here as we have only zero values
                 REQUIRE_NOTHROW(G1Element::FromByteVector(buf));
             } else {
@@ -485,9 +486,9 @@ TEST_CASE("Error handling")
 
     SECTION("Should throw on a bad G2Element")
     {
-        vector<uint8_t> buf(G2Element::SIZE, 0);
+        fc::ecc::bls_g2 buf;
         for (int i = 0; i < 0xFF; i++) {
-            buf[0] = (uint8_t)i;
+            buf.data[0] = (char)i;
             if (i == 0xc0) { // Infinity prefix shouldn't throw here as we have only zero values
                 REQUIRE_NOTHROW(G2Element::FromByteVector(buf));
             } else {
@@ -495,7 +496,7 @@ TEST_CASE("Error handling")
             }
         }
         // Trigger "G2 element must always have 48th byte start with 0b000" error case
-        buf[48] = 0xFF;
+        buf.data[48] = 0xFF;
         REQUIRE_THROWS(G2Element::FromByteVector(buf));
     }
 
@@ -708,7 +709,7 @@ TEST_CASE("Signature tests")
     SECTION("Aggregate Verification of zero items with infinity should pass")
     {
         vector<G1Element> pks_as_g1;
-        vector<vector<uint8_t> > pks_as_bytes;
+        vector<fc::ecc::bls_g1 > pks_as_bytes;
         vector<vector<uint8_t> > msgs;
         vector<G2Element> sigs;
 
@@ -865,8 +866,8 @@ TEST_CASE("Advanced") {
         G2Element signature = AugSchemeMPL().Sign(sk, message);
 
         vector<uint8_t> skBytes = sk.Serialize();
-        vector<uint8_t> pkBytes = pk.Serialize();
-        vector<uint8_t> signatureBytes = signature.Serialize();
+        fc::ecc::bls_g1 pkBytes = pk.Serialize();
+        fc::ecc::bls_g2 signatureBytes = signature.Serialize();
 
         cout << Util::HexStr(skBytes) << endl;    // 32 bytes
         cout << Util::HexStr(pkBytes) << endl;    // 48 bytes
@@ -962,12 +963,12 @@ TEST_CASE("Advanced") {
         PrivateKey pk2 = AugSchemeMPL().KeyGen(Bytes(getRandomSeed()));
         PrivateKey pk3 = PopSchemeMPL().KeyGen(Bytes(getRandomSeed()));
 
-        std::vector<uint8_t> vecG1Element = pk1.GetG1Element().Serialize();
+        fc::ecc::bls_g1 vecG1Element = pk1.GetG1Element().Serialize();
         G1Element g1Vector = G1Element::FromByteVector(vecG1Element);
         G1Element g1Bytes = G1Element::FromBytes(Bytes(vecG1Element));
         REQUIRE(g1Vector == g1Bytes);
 
-        std::vector<uint8_t> vecG2Element = pk1.GetG2Element().Serialize();
+        fc::ecc::bls_g2 vecG2Element = pk1.GetG2Element().Serialize();
         G2Element g2Vector = G2Element::FromByteVector(vecG2Element);
         G2Element g2Bytes = G2Element::FromBytes(Bytes(vecG2Element));
         REQUIRE(g2Vector == g2Bytes);
@@ -994,12 +995,12 @@ TEST_CASE("Advanced") {
         REQUIRE(BasicSchemeMPL().Verify(Bytes(g1_1.Serialize()), Bytes(vecHash), Bytes(g2BasicSignVector1.Serialize())));
         REQUIRE(BasicSchemeMPL().Verify(g1_1, Bytes(vecHash), g2BasicSignVector1));
 
-        vector<vector<uint8_t>> vecG1Vector = {g1_1.Serialize(), g1_3.Serialize()};
-        vector<vector<uint8_t>> vecG2Vector = {g2BasicSignVector1.Serialize(), g2BasicSign3.Serialize()};
-        vector<vector<uint8_t>> vecHashes = {vecHash, vecG2Element};
+        vector<fc::ecc::bls_g1> vecG1Vector = {g1_1.Serialize(), g1_3.Serialize()};
+        vector<fc::ecc::bls_g2> vecG2Vector = {g2BasicSignVector1.Serialize(), g2BasicSign3.Serialize()};
+        vector<vector<uint8_t>> vecHashes = {vecHash, vector<uint8_t>(vecG2Element.data, vecG2Element.data + vecG2Element.size())};
 
-        vector<uint8_t> aggVector = BasicSchemeMPL().Aggregate(vecG2Vector);
-        vector<uint8_t> aggBytes = BasicSchemeMPL().Aggregate(vector<Bytes>{vecG2Vector.begin(), vecG2Vector.end()});
+        fc::ecc::bls_g2 aggVector = BasicSchemeMPL().Aggregate(vecG2Vector);
+        fc::ecc::bls_g2 aggBytes = BasicSchemeMPL().Aggregate(vector<Bytes>{vecG2Vector.begin(), vecG2Vector.end()});
         REQUIRE(aggVector == aggBytes);
 
         REQUIRE(BasicSchemeMPL().AggregateVerify(vector<Bytes>{vecG1Vector.begin(), vecG1Vector.end()},
@@ -1018,11 +1019,11 @@ TEST_CASE("Advanced") {
         REQUIRE(AugSchemeMPL().Verify(Bytes(g1_1.Serialize()), Bytes(vecHash), Bytes(g2AugSignVector1.Serialize())));
         REQUIRE(AugSchemeMPL().Verify(g1_1, Bytes(vecHash), g2AugSignVector1));
 
-        vector<vector<uint8_t>> vecG1AugVector = {g1_1.Serialize(), g1_2.Serialize()};
-        vector<vector<uint8_t>> vecG2AugVector = {g2AugSignVector1.Serialize(), g2AugSign2.Serialize()};
+        vector<fc::ecc::bls_g1> vecG1AugVector = {g1_1.Serialize(), g1_2.Serialize()};
+        vector<fc::ecc::bls_g2 > vecG2AugVector = {g2AugSignVector1.Serialize(), g2AugSign2.Serialize()};
 
-        vector<uint8_t> aggAugVector = AugSchemeMPL().Aggregate(vecG2AugVector);
-        vector<uint8_t> aggAugBytes = AugSchemeMPL().Aggregate(vector<Bytes>{vecG2AugVector.begin(), vecG2AugVector.end()});
+        fc::ecc::bls_g2  aggAugVector = AugSchemeMPL().Aggregate(vecG2AugVector);
+        fc::ecc::bls_g2  aggAugBytes = AugSchemeMPL().Aggregate(vector<Bytes>{vecG2AugVector.begin(), vecG2AugVector.end()});
         REQUIRE(aggAugVector == aggAugBytes);
 
         REQUIRE(AugSchemeMPL().AggregateVerify(vector<Bytes>{vecG1AugVector.begin(), vecG1AugVector.end()},
@@ -1057,18 +1058,18 @@ TEST_CASE("Schemes") {
 
         PrivateKey sk1 = BasicSchemeMPL().KeyGen(seed1);
         G1Element pk1 = BasicSchemeMPL().SkToG1(sk1);
-        vector<uint8_t> pk1v = BasicSchemeMPL().SkToPk(sk1);
+        fc::ecc::bls_g1 pk1v = BasicSchemeMPL().SkToPk(sk1);
         G2Element sig1 = BasicSchemeMPL().Sign(sk1, msg1);
-        vector<uint8_t> sig1v = BasicSchemeMPL().Sign(sk1, msg1).Serialize();
+        fc::ecc::bls_g2 sig1v = BasicSchemeMPL().Sign(sk1, msg1).Serialize();
 
 
         REQUIRE(BasicSchemeMPL().Verify(pk1v, msg1, sig1v));
 
         PrivateKey sk2 = BasicSchemeMPL().KeyGen(seed2);
         G1Element pk2 = BasicSchemeMPL().SkToG1(sk2);
-        vector<uint8_t> pk2v = BasicSchemeMPL().SkToPk(sk2);
+        fc::ecc::bls_g1 pk2v = BasicSchemeMPL().SkToPk(sk2);
         G2Element sig2 = BasicSchemeMPL().Sign(sk2, msg2);
-        vector<uint8_t> sig2v = BasicSchemeMPL().Sign(sk2, msg2).Serialize();
+        fc::ecc::bls_g2 sig2v = BasicSchemeMPL().Sign(sk2, msg2).Serialize();
 
         // Wrong G2Element
         REQUIRE(BasicSchemeMPL().Verify(pk1, msg1, sig2) == false);
@@ -1081,7 +1082,7 @@ TEST_CASE("Schemes") {
         REQUIRE(BasicSchemeMPL().Verify(pk2v, msg1, sig1v) == false);
 
         G2Element aggsig = BasicSchemeMPL().Aggregate({sig1, sig2});
-        vector<uint8_t> aggsigv = BasicSchemeMPL().Aggregate(vector<vector<uint8_t>>{sig1v, sig2v});
+        fc::ecc::bls_g2 aggsigv = BasicSchemeMPL().Aggregate(vector<fc::ecc::bls_g2>{sig1v, sig2v});
         REQUIRE(BasicSchemeMPL().AggregateVerify({pk1, pk2}, msgs, aggsig));
         REQUIRE(BasicSchemeMPL().AggregateVerify({pk1v, pk2v}, msgs, aggsigv));
     }
@@ -1096,18 +1097,18 @@ TEST_CASE("Schemes") {
 
         PrivateKey sk1 = AugSchemeMPL().KeyGen(seed1);
         G1Element pk1 = AugSchemeMPL().SkToG1(sk1);
-        vector<uint8_t> pk1v = AugSchemeMPL().SkToPk(sk1);
+        fc::ecc::bls_g1 pk1v = AugSchemeMPL().SkToPk(sk1);
         G2Element sig1 = AugSchemeMPL().Sign(sk1, msg1);
-        vector<uint8_t> sig1v = AugSchemeMPL().Sign(sk1, msg1).Serialize();
+        fc::ecc::bls_g2 sig1v = AugSchemeMPL().Sign(sk1, msg1).Serialize();
 
         REQUIRE(AugSchemeMPL().Verify(pk1, msg1, sig1));
         REQUIRE(AugSchemeMPL().Verify(pk1v, msg1, sig1v));
 
         PrivateKey sk2 = AugSchemeMPL().KeyGen(seed2);
         G1Element pk2 = AugSchemeMPL().SkToG1(sk2);
-        vector<uint8_t> pk2v = AugSchemeMPL().SkToPk(sk2);
+        fc::ecc::bls_g1 pk2v = AugSchemeMPL().SkToPk(sk2);
         G2Element sig2 = AugSchemeMPL().Sign(sk2, msg2);
-        vector<uint8_t> sig2v = AugSchemeMPL().Sign(sk2, msg2).Serialize();
+        fc::ecc::bls_g2 sig2v = AugSchemeMPL().Sign(sk2, msg2).Serialize();
 
         // Wrong G2Element
         REQUIRE(AugSchemeMPL().Verify(pk1, msg1, sig2) == false);
@@ -1120,7 +1121,7 @@ TEST_CASE("Schemes") {
         REQUIRE(AugSchemeMPL().Verify(pk2v, msg1, sig1v) == false);
 
         G2Element aggsig = AugSchemeMPL().Aggregate({sig1, sig2});
-        vector<uint8_t> aggsigv = AugSchemeMPL().Aggregate(vector<vector<uint8_t>>{sig1v, sig2v});
+        fc::ecc::bls_g2 aggsigv = AugSchemeMPL().Aggregate(vector<fc::ecc::bls_g2>{sig1v, sig2v});
         REQUIRE(AugSchemeMPL().AggregateVerify({pk1, pk2}, msgs, aggsig));
         REQUIRE(AugSchemeMPL().AggregateVerify({pk1v, pk2v}, msgs, aggsigv));
     }
@@ -1135,18 +1136,18 @@ TEST_CASE("Schemes") {
 
         PrivateKey sk1 = PopSchemeMPL().KeyGen(seed1);
         G1Element pk1 = PopSchemeMPL().SkToG1(sk1);
-        vector<uint8_t> pk1v = PopSchemeMPL().SkToPk(sk1);
+        fc::ecc::bls_g1 pk1v = PopSchemeMPL().SkToPk(sk1);
         G2Element sig1 = PopSchemeMPL().Sign(sk1, msg1);
-        vector<uint8_t> sig1v = PopSchemeMPL().Sign(sk1, msg1).Serialize();
+        fc::ecc::bls_g2 sig1v = PopSchemeMPL().Sign(sk1, msg1).Serialize();
 
         REQUIRE(PopSchemeMPL().Verify(pk1, msg1, sig1));
         REQUIRE(PopSchemeMPL().Verify(pk1v, msg1, sig1v));
 
         PrivateKey sk2 = PopSchemeMPL().KeyGen(seed2);
         G1Element pk2 = PopSchemeMPL().SkToG1(sk2);
-        vector<uint8_t> pk2v = PopSchemeMPL().SkToPk(sk2);
+        fc::ecc::bls_g1 pk2v = PopSchemeMPL().SkToPk(sk2);
         G2Element sig2 = PopSchemeMPL().Sign(sk2, msg2);
-        vector<uint8_t> sig2v = PopSchemeMPL().Sign(sk2, msg2).Serialize();
+        fc::ecc::bls_g2 sig2v = PopSchemeMPL().Sign(sk2, msg2).Serialize();
 
         // Wrong G2Element
         REQUIRE(PopSchemeMPL().Verify(pk1, msg1, sig2) == false);
@@ -1159,23 +1160,23 @@ TEST_CASE("Schemes") {
         REQUIRE(PopSchemeMPL().Verify(pk2v, msg1, sig1v) == false);
 
         G2Element aggsig = PopSchemeMPL().Aggregate({sig1, sig2});
-        vector<uint8_t> aggsigv = PopSchemeMPL().Aggregate(vector<vector<uint8_t>>{sig1v, sig2v});
+        fc::ecc::bls_g2 aggsigv = PopSchemeMPL().Aggregate(vector<fc::ecc::bls_g2>{sig1v, sig2v});
         REQUIRE(PopSchemeMPL().AggregateVerify({pk1, pk2}, msgs, aggsig));
         REQUIRE(PopSchemeMPL().AggregateVerify({pk1v, pk2v}, msgs, aggsigv));
 
         // PopVerify
         G2Element proof1 = PopSchemeMPL().PopProve(sk1);
-        vector<uint8_t> proof1v = PopSchemeMPL().PopProve(sk1).Serialize();
+        fc::ecc::bls_g2 proof1v = PopSchemeMPL().PopProve(sk1).Serialize();
         REQUIRE(PopSchemeMPL().PopVerify(pk1, proof1));
         REQUIRE(PopSchemeMPL().PopVerify(pk1v, proof1v));
 
         // FastAggregateVerify
         // We want sk2 to sign the same message
         G2Element sig2_same = PopSchemeMPL().Sign(sk2, msg1);
-        vector<uint8_t> sig2v_same = PopSchemeMPL().Sign(sk2, msg1).Serialize();
+        fc::ecc::bls_g2 sig2v_same = PopSchemeMPL().Sign(sk2, msg1).Serialize();
         G2Element aggsig_same = PopSchemeMPL().Aggregate({sig1, sig2_same});
-        vector<uint8_t> aggsigv_same =
-            PopSchemeMPL().Aggregate(vector<vector<uint8_t>>{sig1v, sig2v_same});
+        fc::ecc::bls_g2 aggsigv_same =
+            PopSchemeMPL().Aggregate(vector<fc::ecc::bls_g2>{sig1v, sig2v_same});
         REQUIRE(
             PopSchemeMPL().FastAggregateVerify({pk1, pk2}, msg1, aggsig_same));
         REQUIRE(PopSchemeMPL().FastAggregateVerify(

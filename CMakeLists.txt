@@ -14,6 +14,8 @@ endif()
 
 project(BLS)
 
+include_directories(${LIBFC_INCLUDE})
+
 set(BUILD_BLS_PYTHON_BINDINGS "1" CACHE STRING "")
 set(BUILD_BLS_TESTS "1" CACHE STRING "")
 set(BUILD_BLS_BENCHMARKS "1" CACHE STRING "")

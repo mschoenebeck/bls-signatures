@@ -68,7 +68,7 @@ G1Element G1Element::FromBytesUnchecked(Bytes const bytes)
     return ele;
 }
 
-G1Element G1Element::FromByteVector(const std::vector<uint8_t>& bytevec)
+G1Element G1Element::FromByteVector(const fc::ecc::bls_g1& bytevec)
 {
     return G1Element::FromBytes(Bytes(bytevec));
 }
@@ -139,18 +139,18 @@ uint32_t G1Element::GetFingerprint() const
 {
     uint8_t buffer[G1Element::SIZE];
     uint8_t hash[32];
-    memcpy(buffer, Serialize().data(), G1Element::SIZE);
+    memcpy(buffer, Serialize().begin(), G1Element::SIZE);
     Util::Hash256(hash, buffer, G1Element::SIZE);
     return Util::FourBytesToInt(hash);
 }
 
-std::vector<uint8_t> G1Element::Serialize() const {
+fc::ecc::bls_g1 G1Element::Serialize() const {
     uint8_t buffer[G1Element::SIZE + 1];
     g1_write_bin(buffer, G1Element::SIZE + 1, p, 1);
 
     if (buffer[0] == 0x00) {  // infinity
-        std::vector<uint8_t> result(G1Element::SIZE, 0);
-        result[0] = 0xc0;
+        fc::ecc::bls_g1 result;
+        result.data[0] = 0xc0;
         return result;
     }
 
@@ -159,7 +159,11 @@ std::vector<uint8_t> G1Element::Serialize() const {
     }
 
     buffer[1] |= 0x80;  // indicate compression
-    return std::vector<uint8_t>(buffer + 1, buffer + 1 + G1Element::SIZE);
+    //return std::vector<uint8_t>(buffer + 1, buffer + 1 + G1Element::SIZE);
+    
+    fc::ecc::bls_g1 r;
+    memcpy(r.begin(), buffer + 1, G1Element::SIZE);
+    return r;
 }
 
 bool operator==(const G1Element & a, const G1Element &b)
@@ -260,7 +264,7 @@ G2Element G2Element::FromBytesUnchecked(Bytes const bytes)
     return ele;
 }
 
-G2Element G2Element::FromByteVector(const std::vector<uint8_t>& bytevec)
+G2Element G2Element::FromByteVector(const fc::ecc::bls_g2& bytevec)
 {
     return G2Element::FromBytes(Bytes(bytevec));
 }
@@ -327,13 +331,13 @@ G2Element G2Element::Negate() const
 
 GTElement G2Element::Pair(const G1Element& a) const { return a & (*this); }
 
-std::vector<uint8_t> G2Element::Serialize() const {
+fc::ecc::bls_g2 G2Element::Serialize() const {
     uint8_t buffer[G2Element::SIZE + 1];
     g2_write_bin(buffer, G2Element::SIZE + 1, (g2_st*)q, 1);
 
     if (buffer[0] == 0x00) {  // infinity
-        std::vector<uint8_t> result(G2Element::SIZE, 0);
-        result[0] = 0xc0;
+        fc::ecc::bls_g2 result;
+        result.data[0] = 0xc0;
         return result;
     }
 
@@ -347,9 +351,9 @@ std::vector<uint8_t> G2Element::Serialize() const {
     }
 
     // Swap buffer, relic uses the opposite ordering for Fq2 elements
-    std::vector<uint8_t> result(G2Element::SIZE, 0);
-    std::memcpy(result.data(), buffer + 1 + G2Element::SIZE / 2, G2Element::SIZE / 2);
-    std::memcpy(result.data() + G2Element::SIZE / 2, buffer + 1, G2Element::SIZE / 2);
+    fc::ecc::bls_g2 result;
+    std::memcpy(result.data, buffer + 1 + G2Element::SIZE / 2, G2Element::SIZE / 2);
+    std::memcpy(result.data + G2Element::SIZE / 2, buffer + 1, G2Element::SIZE / 2);
     return result;
 }
 

@@ -45,7 +45,7 @@ public:
     virtual PrivateKey KeyGen(const Bytes& seed);
 
     // Generates a public key from a secret key
-    virtual vector<uint8_t> SkToPk(const PrivateKey &seckey);
+    virtual fc::ecc::bls_g1 SkToPk(const PrivateKey &seckey);
 
     virtual G1Element SkToG1(const PrivateKey &seckey);
 
@@ -64,16 +64,16 @@ public:
 
     virtual bool Verify(const G1Element& pubkey, const Bytes& message, const G2Element& signature);
 
-    virtual vector<uint8_t> Aggregate(const vector<vector<uint8_t>> &signatures);
-    virtual vector<uint8_t> Aggregate(const vector<Bytes>& signatures);
+    virtual fc::ecc::bls_g2 Aggregate(const vector<fc::ecc::bls_g2> &signatures);
+    virtual fc::ecc::bls_g2 Aggregate(const vector<Bytes>& signatures);
 
     virtual G2Element Aggregate(const vector<G2Element> &signatures);
 
     virtual G1Element Aggregate(const vector<G1Element> &publicKeys);
 
-    virtual bool AggregateVerify(const vector<vector<uint8_t>> &pubkeys,
+    virtual bool AggregateVerify(const vector<fc::ecc::bls_g1> &pubkeys,
                                  const vector<vector<uint8_t>> &messages,
-                                 const vector<uint8_t> &signature);
+                                 const fc::ecc::bls_g2 &signature);
 
     virtual bool AggregateVerify(const vector<Bytes>& pubkeys,
                                  const vector<Bytes>& messages,
@@ -100,9 +100,9 @@ class BasicSchemeMPL : public CoreMPL {
 public:
     static const std::string CIPHERSUITE_ID;
     BasicSchemeMPL() : CoreMPL(BasicSchemeMPL::CIPHERSUITE_ID) {}
-    bool AggregateVerify(const vector<vector<uint8_t>> &pubkeys,
+    bool AggregateVerify(const vector<fc::ecc::bls_g1> &pubkeys,
                          const vector<vector<uint8_t>> &messages,
-                         const vector<uint8_t> &signature) override;
+                         const fc::ecc::bls_g2 &signature) override;
 
     bool AggregateVerify(const vector<Bytes>& pubkeys,
                          const vector<Bytes>& messages,
@@ -153,9 +153,9 @@ public:
                 const Bytes& message,
                 const G2Element& signature) override;
 
-    bool AggregateVerify(const vector<vector<uint8_t>> &pubkeys,
+    bool AggregateVerify(const vector<fc::ecc::bls_g1> &pubkeys,
                          const vector<vector<uint8_t>> &messages,
-                         const vector<uint8_t> &signature) override;
+                         const fc::ecc::bls_g2 &signature) override;
 
     bool AggregateVerify(const vector<Bytes>& pubkeys,
                          const vector<Bytes>& messages,
@@ -193,9 +193,9 @@ public:
                              const Bytes& message,
                              const G2Element& signature);
 
-    bool FastAggregateVerify(const vector<vector<uint8_t>> &pubkeys,
+    bool FastAggregateVerify(const vector<fc::ecc::bls_g1> &pubkeys,
                              const vector<uint8_t> &message,
-                             const vector<uint8_t> &signature);
+                             const fc::ecc::bls_g2 &signature);
 
     bool FastAggregateVerify(const vector<Bytes>& pubkeys,
                              const Bytes& message,

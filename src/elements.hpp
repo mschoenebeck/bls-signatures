@@ -26,6 +26,7 @@ extern "C" {
 #endif
 
 #include <utility>
+#include <fc/crypto/elliptic.hpp>
 
 namespace bls {
 class G1Element;
@@ -42,7 +43,7 @@ public:
 
     static G1Element FromBytes(Bytes bytes);
     static G1Element FromBytesUnchecked(Bytes bytes);
-    static G1Element FromByteVector(const std::vector<uint8_t> &bytevec);
+    static G1Element FromByteVector(const fc::ecc::bls_g1 &bytevec);
     static G1Element FromNative(const g1_t element);
     static G1Element FromMessage(const std::vector<uint8_t> &message,
                                  const uint8_t *dst,
@@ -58,7 +59,7 @@ public:
     G1Element Negate() const;
     GTElement Pair(const G2Element &b) const;
     uint32_t GetFingerprint() const;
-    std::vector<uint8_t> Serialize() const;
+    fc::ecc::bls_g1 Serialize() const;
 
     friend bool operator==(const G1Element &a, const G1Element &b);
     friend bool operator!=(const G1Element &a, const G1Element &b);
@@ -83,7 +84,7 @@ public:
 
     static G2Element FromBytes(Bytes bytes);
     static G2Element FromBytesUnchecked(Bytes bytes);
-    static G2Element FromByteVector(const std::vector<uint8_t> &bytevec);
+    static G2Element FromByteVector(const fc::ecc::bls_g2 &bytevec);
     static G2Element FromNative(const g2_t element);
     static G2Element FromMessage(const std::vector<uint8_t>& message,
                                  const uint8_t* dst,
@@ -98,7 +99,7 @@ public:
     void ToNative(g2_t output) const;
     G2Element Negate() const;
     GTElement Pair(const G1Element &a) const;
-    std::vector<uint8_t> Serialize() const;
+    fc::ecc::bls_g2 Serialize() const;
 
     friend bool operator==(G2Element const &a, G2Element const &b);
     friend bool operator!=(G2Element const &a, G2Element const &b);

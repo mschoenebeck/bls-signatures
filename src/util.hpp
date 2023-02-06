@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 #include <array>
+#include <fc/crypto/elliptic.hpp>
 
 namespace bls {
 
@@ -42,6 +43,11 @@ public:
     template <size_t N>
     Bytes(const std::array<uint8_t, N>& a)
         : pData(a.data()), nSize(N)
+    {
+    }
+    template <size_t N>
+    Bytes(const fc::array<char, N>& a)
+        : pData(reinterpret_cast<const uint8_t*>(a.begin())), nSize(N)
     {
     }
 
@@ -76,6 +82,15 @@ class Util {
         s << std::hex;
         for (size_t i=0; i < data.size(); ++i)
             s << std::setw(2) << std::setfill('0') << static_cast<int>(data[i]);
+        return s.str();
+    }
+
+    template <size_t N>
+    static std::string HexStr(const fc::array<char, N> &data) {
+        std::stringstream s;
+        s << std::hex;
+        for (size_t i=0; i < N; ++i)
+            s << std::setw(2) << std::setfill('0') << static_cast<int>(static_cast<unsigned char>(data.data[i]));
         return s.str();
     }
 

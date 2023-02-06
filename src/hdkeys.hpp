@@ -162,7 +162,7 @@ class HDKeys {
     static PrivateKey DeriveChildSkUnhardened(const PrivateKey& parentSk, uint32_t index) {
         uint8_t* buf = Util::SecAlloc<uint8_t>(G1Element::SIZE + 4);
         uint8_t* digest = Util::SecAlloc<uint8_t>(HASH_LEN);
-        memcpy(buf, parentSk.GetG1Element().Serialize().data(), G1Element::SIZE);
+        memcpy(buf, parentSk.GetG1Element().Serialize().data, G1Element::SIZE);
         Util::IntToFourBytes(buf + G1Element::SIZE, index);
         Util::Hash256(digest, buf, G1Element::SIZE + 4);
 
@@ -176,7 +176,7 @@ class HDKeys {
     static G1Element DeriveChildG1Unhardened(const G1Element& pk, uint32_t index) {
         uint8_t* buf = Util::SecAlloc<uint8_t>(G1Element::SIZE + 4);
         uint8_t* digest = Util::SecAlloc<uint8_t>(HASH_LEN);
-        memcpy(buf, pk.Serialize().data(), G1Element::SIZE);
+        memcpy(buf, pk.Serialize().data, G1Element::SIZE);
 
         Util::IntToFourBytes(buf + G1Element::SIZE, index);
         Util::Hash256(digest, buf, G1Element::SIZE + 4);
@@ -199,7 +199,7 @@ class HDKeys {
     static G2Element DeriveChildG2Unhardened(const G2Element& pk, uint32_t index) {
         uint8_t* buf = Util::SecAlloc<uint8_t>(G2Element::SIZE + 4);
         uint8_t* digest = Util::SecAlloc<uint8_t>(HASH_LEN);
-        memcpy(buf, pk.Serialize().data(), G2Element::SIZE);
+        memcpy(buf, pk.Serialize().data, G2Element::SIZE);
         Util::IntToFourBytes(buf + G2Element::SIZE, index);
         Util::Hash256(digest, buf, G2Element::SIZE + 4);
 

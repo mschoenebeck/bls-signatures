@@ -32,7 +32,8 @@ void benchSigs() {
     string testName = "Signing";
     const int numIters = 5000;
     PrivateKey sk = AugSchemeMPL().KeyGen(getRandomSeed());
-    vector<uint8_t> message1 = sk.GetG1Element().Serialize();
+    fc::ecc::bls_g1 pk = sk.GetG1Element().Serialize();
+    vector<uint8_t> message1(pk.data, pk.data + pk.size());
 
     auto start = startStopwatch();
 
@@ -71,8 +72,8 @@ void benchVerification() {
 void benchBatchVerification() {
     const int numIters = 100000;
 
-    vector<vector<uint8_t>> sig_bytes;
-    vector<vector<uint8_t>> pk_bytes;
+    vector<fc::ecc::bls_g2> sig_bytes;
+    vector<fc::ecc::bls_g1> pk_bytes;
     vector<vector<uint8_t>> ms;
 
     for (int i = 0; i < numIters; i++) {
