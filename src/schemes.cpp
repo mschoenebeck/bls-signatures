@@ -78,9 +78,9 @@ G2Element CoreMPL::Sign(const PrivateKey& seckey, const Bytes& message)
     return seckey.SignG2(message.begin(), message.size(), (const uint8_t*)strCiphersuiteId.c_str(), strCiphersuiteId.length());
 }
 
-bool CoreMPL::Verify(const vector<uint8_t> &pubkey,
+bool CoreMPL::Verify(const fc::ecc::bls_g1 &pubkey,
                      const vector<uint8_t> &message,  // unhashed
-                     const vector<uint8_t> &signature)
+                     const fc::ecc::bls_g2 &signature)
 {
     return CoreMPL::Verify(G1Element::FromBytes(Bytes(pubkey)),
                            Bytes(message),
@@ -357,11 +357,11 @@ G2Element AugSchemeMPL::Sign(const PrivateKey& seckey,
     return CoreMPL::Sign(seckey, augMessage);
 }
 
-bool AugSchemeMPL::Verify(const vector<uint8_t> &pubkey,
+bool AugSchemeMPL::Verify(const fc::ecc::bls_g1 &pubkey,
                           const vector<uint8_t> &message,
-                          const vector<uint8_t> &signature)
+                          const fc::ecc::bls_g2 &signature)
 {
-    vector<uint8_t> augMessage(pubkey);
+    vector<uint8_t> augMessage(pubkey.data, pubkey.data + pubkey.size());
     augMessage.reserve(augMessage.size() + message.size());
     augMessage.insert(augMessage.end(), message.begin(), message.end());
     return CoreMPL::Verify(pubkey, augMessage, signature);
@@ -487,7 +487,7 @@ bool PopSchemeMPL::PopVerify(const G1Element &pubkey, const G2Element &signature
     return CoreMPL::NativeVerify(g1s, g2s, 2);
 }
 
-bool PopSchemeMPL::PopVerify(const vector<uint8_t> &pubkey, const vector<uint8_t> &proof)
+bool PopSchemeMPL::PopVerify(const fc::ecc::bls_g1 &pubkey, const vector<uint8_t> &proof)
 {
     return PopSchemeMPL::PopVerify(Bytes(pubkey), Bytes(proof));
 }

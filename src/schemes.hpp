@@ -52,9 +52,9 @@ public:
     virtual G2Element Sign(const PrivateKey &seckey, const vector<uint8_t> &message);
     virtual G2Element Sign(const PrivateKey& seckey, const Bytes& message);
 
-    virtual bool Verify(const vector<uint8_t> &pubkey,
+    virtual bool Verify(const fc::ecc::bls_g1 &pubkey,
                         const vector<uint8_t> &message,
-                        const vector<uint8_t> &signature);
+                        const fc::ecc::bls_g2 &signature);
 
     virtual bool Verify(const Bytes& pubkey, const Bytes& message, const Bytes& signature);
 
@@ -137,9 +137,9 @@ public:
                    const Bytes& message,
                    const G1Element& prepend_pk);
 
-    bool Verify(const vector<uint8_t> &pubkey,
+    bool Verify(const fc::ecc::bls_g1 &pubkey,
                 const vector<uint8_t> &message,
-                const vector<uint8_t> &signature) override;
+                const fc::ecc::bls_g2 &signature) override;
 
     bool Verify(const Bytes& pubkey,
                 const Bytes& message,
@@ -181,7 +181,7 @@ public:
 
     bool PopVerify(const G1Element &pubkey, const G2Element &signature_proof);
 
-    bool PopVerify(const vector<uint8_t> &pubkey, const vector<uint8_t> &proof);
+    bool PopVerify(const fc::ecc::bls_g1 &pubkey, const vector<uint8_t> &proof);
 
     bool PopVerify(const Bytes& pubkey, const Bytes& proof);
 
