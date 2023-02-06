@@ -14,6 +14,9 @@ endif()
 
 project(BLS)
 
+if(NOT LIBFC_INCLUDE)
+  message( FATAL_ERROR "LIBFC_INCLUDE not set, CMake will exit." )
+endif()
 include_directories(${LIBFC_INCLUDE})
 
 set(BUILD_BLS_PYTHON_BINDINGS "1" CACHE STRING "")
