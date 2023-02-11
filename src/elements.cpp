@@ -159,11 +159,9 @@ fc::ecc::bls_g1 G1Element::Serialize() const {
     }
 
     buffer[1] |= 0x80;  // indicate compression
-    //return std::vector<uint8_t>(buffer + 1, buffer + 1 + G1Element::SIZE);
     
-    fc::ecc::bls_g1 r;
-    memcpy(r.begin(), buffer + 1, G1Element::SIZE);
-    return r;
+    const fc::ecc::bls_g1* r = reinterpret_cast<const fc::ecc::bls_g1*>(buffer + 1);
+    return *r;
 }
 
 bool operator==(const G1Element & a, const G1Element &b)
